@@ -2,6 +2,14 @@ import { useState } from 'react';
 import GameBoard from './components/GameBoard.jsx';
 import Player from './components/Player.jsx';
 import Log from './components/Log.jsx';
+import GameOver from './components/GameOver.jsx';
+import { WINNING_COMBINATIONS } from './winning-combinations.js';
+
+const initialGameBoard = [
+	[null, null, null],
+	[null, null, null],
+	[null, null, null],
+];
 
 function deriveActivePlayer(gameTurns) {
 	let currentPlayer = 'X';
@@ -15,9 +23,38 @@ function deriveActivePlayer(gameTurns) {
 
 function App() {
 	const [gameTurns, setGameTurns] = useState([]);
-	// const [activePlayer, setActivePlayer] = useState('X');
 
 	const activePlayer = deriveActivePlayer(gameTurns);
+
+	const gameBoard = [...initialGameBoard.map((arr) => [...arr])];
+
+	for (const turn of gameTurns) {
+		const { square, player } = turn;
+		const { row, col } = square;
+
+		gameBoard[row][col] = player;
+	}
+
+	let winner = undefined;
+
+	for (const combinations of WINNING_COMBINATIONS) {
+		const firstSquareSymbol =
+			gameBoard[combinations[0].row][combinations[0].column];
+		const secondSquareSymbol =
+			gameBoard[combinations[1].row][combinations[1].column];
+		const thirdSquareSymbol =
+			gameBoard[combinations[2].row][combinations[2].column];
+
+		if (
+			firstSquareSymbol &&
+			firstSquareSymbol === secondSquareSymbol &&
+			firstSquareSymbol === thirdSquareSymbol
+		) {
+			winner = firstSquareSymbol;
+		}
+	}
+
+	const hasDraw = gameTurns.length === 9 && !winner;
 
 	function handleSelectedSquare(rowIndex, colIndex) {
 		// setActivePlayer((curActivePlayer) => (curActivePlayer === 'X' ? 'O' : 'X'));
@@ -31,6 +68,10 @@ function App() {
 
 			return updatedTurns;
 		});
+	}
+
+	function handleRematch() {
+		setGameTurns([]);
 	}
 	return (
 		<main>
@@ -47,7 +88,10 @@ function App() {
 						isActive={activePlayer === 'O'}
 					/>
 				</ol>
-				<GameBoard onSelectSquare={handleSelectedSquare} turns={gameTurns} />
+				{(winner || hasDraw) && (
+					<GameOver winner={winner} onRematch={handleRematch} />
+				)}
+				<GameBoard onSelectSquare={handleSelectedSquare} board={gameBoard} />
 			</div>
 			<Log turns={gameTurns} />
 		</main>
